@@ -1,0 +1,629 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sidebar-w: 240px;
+    --sidebar-collapsed: 60px;
+    --topbar-h: 56px;
+    --font: 'DM Sans', sans-serif;
+    --accent: #185FA5;
+    --accent-light: #E6F1FB;
+    --accent-mid: #378ADD;
+    --sidebar-bg: #0c1a2e;
+    --sidebar-text: #b5c4d8;
+    --sidebar-active: #1e3a5f;
+    --sidebar-hover: #162d4a;
+    --radius: 10px;
+  }
+  body { font-family: var(--font); background: var(--color-background-tertiary,#f4f5f7); }
+  .app { display: flex; height: 600px; overflow: hidden; border-radius: var(--radius); border: 0.5px solid var(--color-border-tertiary); }
+
+  /* SIDEBAR */
+  .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); display: flex; flex-direction: column; transition: width .25s ease; flex-shrink: 0; overflow: hidden; }
+  .sidebar.collapsed { width: var(--sidebar-collapsed); }
+  .sb-logo { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: var(--topbar-h); border-bottom: 0.5px solid #1e3a5f; flex-shrink: 0; }
+  .sb-logo-icon { width: 30px; height: 30px; background: var(--accent-mid); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sb-logo-icon svg { width:16px;height:16px;fill:white; }
+  .sb-logo-text { color: #fff; font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; }
+  .sb-logo-sub { color: var(--sidebar-text); font-size: 10px; white-space: nowrap; }
+  .sb-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 0; }
+  .sb-scroll::-webkit-scrollbar { width: 3px; }
+  .sb-scroll::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 2px; }
+  .sb-section { padding: 12px 14px 4px; }
+  .sb-section-label { font-size: 9px; font-weight: 600; letter-spacing: .08em; color: #4a6080; text-transform: uppercase; white-space: nowrap; overflow: hidden; transition: opacity .2s; }
+  .collapsed .sb-section-label { opacity: 0; }
+  .sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 14px; cursor: pointer; border-radius: 0; transition: background .15s; color: var(--sidebar-text); font-size: 13px; white-space: nowrap; position: relative; }
+  .sb-item:hover { background: var(--sidebar-hover); color: #fff; }
+  .sb-item.active { background: var(--sidebar-active); color: #fff; border-left: 2px solid var(--accent-mid); }
+  .sb-item svg { width:16px;height:16px;fill:currentColor;flex-shrink:0; }
+  .sb-item-label { overflow: hidden; transition: opacity .2s, width .2s; }
+  .collapsed .sb-item-label { opacity: 0; width: 0; }
+  .sb-item-badge { margin-left: auto; background: var(--accent-mid); color: white; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; flex-shrink: 0; }
+  .collapsed .sb-item-badge { display: none; }
+  .sb-sub { padding-left: 40px; }
+  .collapsed .sb-sub { display: none; }
+  .sb-sub .sb-item { font-size: 12px; padding: 6px 14px 6px 0; color: #6a88a8; }
+  .sb-sub .sb-item.active { color: #fff; border-left: none; background: none; }
+  .sb-sub .sb-item.active::before { content:''; width:3px; height:3px; background: var(--accent-mid); border-radius: 50%; position: absolute; left: -12px; }
+  .sb-sub .sb-item:hover { background: none; color: #fff; }
+  .sb-footer { padding: 12px 14px; border-top: 0.5px solid #1e3a5f; flex-shrink: 0; }
+  .sb-user { display: flex; align-items: center; gap: 10px; }
+  .sb-avatar { width: 30px; height: 30px; background: var(--accent-mid); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+  .sb-user-info { overflow: hidden; }
+  .sb-user-name { color: #fff; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; }
+  .sb-user-role { color: var(--sidebar-text); font-size: 10px; white-space: nowrap; }
+  .collapsed .sb-user-info { display: none; }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { height: var(--topbar-h); background: var(--color-background-primary,#fff); border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 12px; padding: 0 20px; flex-shrink: 0; }
+  .topbar-toggle { width: 32px; height: 32px; border: 0.5px solid var(--color-border-tertiary); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none; color: var(--color-text-secondary); transition: background .15s; }
+  .topbar-toggle:hover { background: var(--color-background-secondary); }
+  .topbar-toggle svg { width:16px;height:16px;fill:currentColor; }
+  .topbar-breadcrumb { font-size: 13px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 6px; }
+  .topbar-breadcrumb span { color: var(--color-text-primary); font-weight: 500; }
+  .topbar-search { flex: 1; max-width: 320px; margin-left: 8px; position: relative; }
+  .topbar-search input { width: 100%; height: 32px; border: 0.5px solid var(--color-border-tertiary); border-radius: 6px; padding: 0 12px 0 32px; font-size: 13px; background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; }
+  .topbar-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; fill: var(--color-text-secondary); pointer-events: none; }
+  .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .topbar-btn { width: 32px; height: 32px; border: 0.5px solid var(--color-border-tertiary); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none; color: var(--color-text-secondary); position: relative; }
+  .topbar-btn:hover { background: var(--color-background-secondary); }
+  .topbar-btn svg { width:15px;height:15px;fill:currentColor; }
+  .notif-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; background: #E24B4A; border-radius: 50%; border: 1.5px solid var(--color-background-primary,#fff); }
+  .topbar-avatar { width: 30px; height: 30px; background: var(--accent-mid); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 600; cursor: pointer; }
+
+  /* CONTENT */
+  .content { flex: 1; overflow-y: auto; padding: 20px; }
+  .content::-webkit-scrollbar { width: 4px; }
+  .content::-webkit-scrollbar-thumb { background: var(--color-border-tertiary); border-radius: 2px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* DASHBOARD VIEW */
+  .page-title { font-size: 18px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 20px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--color-background-primary,#fff); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--radius); padding: 16px; }
+  .stat-label { font-size: 11px; color: var(--color-text-secondary); font-weight: 500; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+  .stat-value { font-size: 24px; font-weight: 500; color: var(--color-text-primary); line-height: 1; }
+  .stat-delta { font-size: 11px; margin-top: 6px; }
+  .delta-up { color: #3B6D11; }
+  .delta-down { color: #A32D2D; }
+  .two-col { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr); gap: 12px; }
+  .card { background: var(--color-background-primary,#fff); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--radius); padding: 16px; }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 14px; }
+  .doc-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .doc-row:last-child { border-bottom: none; }
+  .doc-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+  .doc-icon.pdf { background: #FCEBEB; color: #A32D2D; }
+  .doc-icon.doc { background: #E6F1FB; color: #185FA5; }
+  .doc-icon.xls { background: #EAF3DE; color: #3B6D11; }
+  .doc-name { font-size: 12px; color: var(--color-text-primary); flex: 1; }
+  .doc-date { font-size: 11px; color: var(--color-text-secondary); }
+  .doc-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+  .badge-review { background: #FAEEDA; color: #633806; }
+  .badge-approved { background: #EAF3DE; color: #27500A; }
+  .badge-draft { background: #F1EFE8; color: #444441; }
+  .activity-item { display: flex; gap: 10px; margin-bottom: 12px; }
+  .act-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-mid); margin-top: 4px; flex-shrink: 0; }
+  .act-text { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
+  .act-text strong { color: var(--color-text-primary); }
+  .act-time { font-size: 10px; color: var(--color-text-secondary); margin-top: 2px; }
+
+  /* DOCS VIEW */
+  .docs-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .btn-primary { background: var(--accent); color: white; border: none; border-radius: 6px; padding: 7px 14px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .btn-primary svg { width:13px;height:13px;fill:white; }
+  .btn-outline { background: none; border: 0.5px solid var(--color-border-secondary,#ccc); border-radius: 6px; padding: 7px 14px; font-size: 13px; cursor: pointer; color: var(--color-text-secondary); }
+  .view-toggle { display: flex; border: 0.5px solid var(--color-border-tertiary); border-radius: 6px; overflow: hidden; margin-left: auto; }
+  .vt-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: none; border: none; color: var(--color-text-secondary); }
+  .vt-btn.active { background: var(--accent-light); color: var(--accent); }
+  .vt-btn svg { width:14px;height:14px;fill:currentColor; }
+  .docs-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+  .doc-card { background: var(--color-background-primary,#fff); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: border-color .15s; }
+  .doc-card:hover { border-color: var(--accent-mid); }
+  .dc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .dc-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .dc-name { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+  .dc-meta { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 8px; }
+  .dc-footer { display: flex; align-items: center; justify-content: space-between; }
+  .docs-list-view { display: none; }
+  .docs-list-view table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .docs-list-view th { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); padding: 6px 12px; text-align: left; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .docs-list-view td { padding: 10px 12px; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); }
+  .docs-list-view tr:last-child td { border-bottom: none; }
+
+  /* USERS VIEW */
+  .users-table { background: var(--color-background-primary,#fff); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--radius); overflow: hidden; }
+  .users-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .users-table th { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); padding: 10px 16px; text-align: left; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); }
+  .users-table td { padding: 12px 16px; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); }
+  .users-table tr:last-child td { border-bottom: none; }
+  .u-avatar { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: white; margin-right: 8px; }
+  .role-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; display: inline-block; }
+  .role-admin { background: #E6F1FB; color: #0C447C; }
+  .role-editor { background: #E1F5EE; color: #085041; }
+  .role-auditor { background: #FAEEDA; color: #633806; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .status-active { background: #639922; }
+  .status-inactive { background: #888780; }
+
+  /* REPORTS */
+  .reports-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+  .report-card { background: var(--color-background-primary,#fff); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--radius); padding: 16px; cursor: pointer; transition: border-color .15s; }
+  .report-card:hover { border-color: var(--accent-mid); }
+  .rc-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .rc-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .rc-desc { font-size: 12px; color: var(--color-text-secondary); }
+  .mini-bar { display: flex; align-items: flex-end; gap: 3px; height: 40px; margin-top: 12px; }
+  .bar { border-radius: 2px 2px 0 0; flex: 1; }
+
+  /* CONFIG */
+  .config-sections { display: flex; flex-direction: column; gap: 12px; }
+  .config-card { background: var(--color-background-primary,#fff); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--radius); padding: 16px; }
+  .config-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .config-row:last-child { border-bottom: none; }
+  .config-row-label { font-size: 13px; color: var(--color-text-primary); }
+  .config-row-sub { font-size: 11px; color: var(--color-text-secondary); }
+  .toggle { width: 36px; height: 20px; background: #B4B2A9; border-radius: 20px; cursor: pointer; position: relative; transition: background .2s; }
+  .toggle.on { background: var(--accent); }
+  .toggle::after { content:''; width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: left .2s; }
+  .toggle.on::after { left: 19px; }
+
+  /* OTROS MODULOS */
+  .modules-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+  .module-card { background: var(--color-background-primary,#fff); border: 1.5px dashed var(--color-border-tertiary); border-radius: var(--radius); padding: 20px 16px; text-align: center; cursor: pointer; transition: border-color .15s; }
+  .module-card:hover { border-color: var(--accent-mid); border-style: solid; }
+  .mc-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+  .mc-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 3px; }
+  .mc-sub { font-size: 11px; color: var(--color-text-secondary); }
+  .mc-badge { display: inline-block; font-size: 9px; padding: 2px 6px; border-radius: 10px; background: #FAEEDA; color: #633806; font-weight: 600; margin-top: 6px; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<h2 class="sr-only">Panel de administración DMS - sistema de gestión documental</h2>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+      </div>
+      <div>
+        <div class="sb-logo-text">DMS</div>
+        <div class="sb-logo-sub">Universidad</div>
+      </div>
+    </div>
+
+    <div class="sb-scroll">
+      <div class="sb-section"><div class="sb-section-label">Principal</div></div>
+      <div class="sb-item active" onclick="navigate('dashboard',this)">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <span class="sb-item-label">Dashboard</span>
+      </div>
+
+      <div class="sb-section"><div class="sb-section-label">Documentos</div></div>
+      <div class="sb-item" onclick="navigate('docs',this)">
+        <svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+        <span class="sb-item-label">Todos los documentos</span>
+        <span class="sb-item-badge">48</span>
+      </div>
+      <div class="sb-sub">
+        <div class="sb-item active-sub" onclick="navigate('docs',this)"><span class="sb-item-label">Subir documento</span></div>
+        <div class="sb-item" onclick="navigate('docs',this)"><span class="sb-item-label">Borradores</span></div>
+        <div class="sb-item" onclick="navigate('docs',this)"><span class="sb-item-label">Favoritos</span></div>
+        <div class="sb-item" onclick="navigate('docs',this)"><span class="sb-item-label">Papelera</span></div>
+      </div>
+
+      <div class="sb-section"><div class="sb-section-label">Gestión</div></div>
+      <div class="sb-item" onclick="navigate('users',this)">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span class="sb-item-label">Usuarios</span>
+      </div>
+      <div class="sb-item" onclick="navigate('reports',this)">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        <span class="sb-item-label">Reportes</span>
+      </div>
+
+      <div class="sb-section"><div class="sb-section-label">Sistema</div></div>
+      <div class="sb-item" onclick="navigate('modules',this)">
+        <svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg>
+        <span class="sb-item-label">Otros módulos</span>
+      </div>
+      <div class="sb-item" onclick="navigate('config',this)">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <span class="sb-item-label">Configuración</span>
+      </div>
+    </div>
+
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar">AD</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name">Admin</div>
+          <div class="sb-user-role">Administrador</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <button class="topbar-toggle" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+      </button>
+      <div class="topbar-breadcrumb" id="breadcrumb">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="topbar-search">
+        <svg class="topbar-search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" placeholder="Buscar documentos, usuarios...">
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-btn">
+          <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+          <div class="notif-dot"></div>
+        </button>
+        <button class="topbar-btn">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        </button>
+        <div class="topbar-avatar">AD</div>
+      </div>
+    </div>
+
+    <!-- CONTENT VIEWS -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="view active" id="view-dashboard">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Resumen general del sistema · Viernes 10 abril, 2026</div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Documentos totales</div>
+            <div class="stat-value">248</div>
+            <div class="stat-delta delta-up">+12 este mes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">En revisión</div>
+            <div class="stat-value">17</div>
+            <div class="stat-delta delta-down">3 vencidos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Usuarios activos</div>
+            <div class="stat-value">34</div>
+            <div class="stat-delta delta-up">+2 esta semana</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Aprobados hoy</div>
+            <div class="stat-value">6</div>
+            <div class="stat-delta delta-up">+2 vs ayer</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Documentos recientes</div>
+            <div class="doc-row">
+              <div class="doc-icon pdf">PDF</div>
+              <div class="doc-name">Reglamento interno 2026.pdf</div>
+              <span class="doc-badge badge-review">En revisión</span>
+              <div class="doc-date" style="margin-left:8px">hace 1h</div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon doc">DOC</div>
+              <div class="doc-name">Acta sesión ordinaria #12.docx</div>
+              <span class="doc-badge badge-approved">Aprobado</span>
+              <div class="doc-date" style="margin-left:8px">hace 3h</div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon xls">XLS</div>
+              <div class="doc-name">Presupuesto Q2 2026.xlsx</div>
+              <span class="doc-badge badge-draft">Borrador</span>
+              <div class="doc-date" style="margin-left:8px">hace 5h</div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon pdf">PDF</div>
+              <div class="doc-name">Informe de auditoría interna.pdf</div>
+              <span class="doc-badge badge-approved">Aprobado</span>
+              <div class="doc-date" style="margin-left:8px">ayer</div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon doc">DOC</div>
+              <div class="doc-name">Contrato servicio TI 2026.docx</div>
+              <span class="doc-badge badge-review">En revisión</span>
+              <div class="doc-date" style="margin-left:8px">ayer</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Actividad reciente</div>
+            <div class="activity-item">
+              <div class="act-dot"></div>
+              <div>
+                <div class="act-text"><strong>María Quispe</strong> subió un nuevo documento</div>
+                <div class="act-time">hace 32 min</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:#639922"></div>
+              <div>
+                <div class="act-text"><strong>Admin</strong> aprobó 3 documentos</div>
+                <div class="act-time">hace 1h</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:#BA7517"></div>
+              <div>
+                <div class="act-text"><strong>Carlos Mamani</strong> dejó un comentario</div>
+                <div class="act-time">hace 2h</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:#E24B4A"></div>
+              <div>
+                <div class="act-text">2 documentos vencieron sin aprobación</div>
+                <div class="act-time">hace 4h</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot"></div>
+              <div>
+                <div class="act-text"><strong>Luis Flores</strong> se registró como editor</div>
+                <div class="act-time">ayer</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTOS -->
+      <div class="view" id="view-docs">
+        <div class="page-title">Documentos</div>
+        <div class="page-sub">Todos los documentos del sistema</div>
+        <div class="docs-toolbar">
+          <button class="btn-primary">
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Subir documento
+          </button>
+          <button class="btn-outline">Filtrar</button>
+          <button class="btn-outline">Ordenar</button>
+          <div class="view-toggle">
+            <button class="vt-btn active" id="vt-grid" onclick="setDocView('grid')">
+              <svg viewBox="0 0 24 24"><path d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm11 0h7v7h-7v-7z"/></svg>
+            </button>
+            <button class="vt-btn" id="vt-list" onclick="setDocView('list')">
+              <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="docs-grid" id="docs-grid">
+          <div class="doc-card"><div class="dc-header"><div class="dc-icon pdf">PDF</div><div><div class="dc-name">Reglamento interno 2026</div></div></div><div class="dc-meta">Subido hace 1h · 2.4 MB</div><div class="dc-footer"><span class="doc-badge badge-review">En revisión</span></div></div>
+          <div class="doc-card"><div class="dc-header"><div class="dc-icon doc">DOC</div><div><div class="dc-name">Acta sesión ordinaria #12</div></div></div><div class="dc-meta">Subido hace 3h · 890 KB</div><div class="dc-footer"><span class="doc-badge badge-approved">Aprobado</span></div></div>
+          <div class="doc-card"><div class="dc-header"><div class="dc-icon xls">XLS</div><div><div class="dc-name">Presupuesto Q2 2026</div></div></div><div class="dc-meta">Subido hace 5h · 1.1 MB</div><div class="dc-footer"><span class="doc-badge badge-draft">Borrador</span></div></div>
+          <div class="doc-card"><div class="dc-header"><div class="dc-icon pdf">PDF</div><div><div class="dc-name">Informe auditoría interna</div></div></div><div class="dc-meta">Ayer · 3.8 MB</div><div class="dc-footer"><span class="doc-badge badge-approved">Aprobado</span></div></div>
+          <div class="doc-card"><div class="dc-header"><div class="dc-icon doc">DOC</div><div><div class="dc-name">Contrato servicio TI 2026</div></div></div><div class="dc-meta">Ayer · 650 KB</div><div class="dc-footer"><span class="doc-badge badge-review">En revisión</span></div></div>
+          <div class="doc-card"><div class="dc-header"><div class="dc-icon pdf">PDF</div><div><div class="dc-name">Plan estratégico 2026-2030</div></div></div><div class="dc-meta">Hace 2 días · 5.2 MB</div><div class="dc-footer"><span class="doc-badge badge-approved">Aprobado</span></div></div>
+        </div>
+        <div class="docs-list-view" id="docs-list">
+          <div class="card" style="padding:0;overflow:hidden">
+          <table>
+            <thead><tr><th>Nombre</th><th>Tipo</th><th>Estado</th><th>Fecha</th><th>Tamaño</th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="doc-icon pdf" style="width:22px;height:22px;font-size:9px">PDF</div>Reglamento interno 2026</div></td><td>PDF</td><td><span class="doc-badge badge-review">En revisión</span></td><td>hace 1h</td><td>2.4 MB</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="doc-icon doc" style="width:22px;height:22px;font-size:9px">DOC</div>Acta sesión ordinaria #12</div></td><td>DOCX</td><td><span class="doc-badge badge-approved">Aprobado</span></td><td>hace 3h</td><td>890 KB</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="doc-icon xls" style="width:22px;height:22px;font-size:9px">XLS</div>Presupuesto Q2 2026</div></td><td>XLSX</td><td><span class="doc-badge badge-draft">Borrador</span></td><td>hace 5h</td><td>1.1 MB</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="doc-icon pdf" style="width:22px;height:22px;font-size:9px">PDF</div>Informe auditoría interna</div></td><td>PDF</td><td><span class="doc-badge badge-approved">Aprobado</span></td><td>Ayer</td><td>3.8 MB</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="doc-icon doc" style="width:22px;height:22px;font-size:9px">DOC</div>Contrato servicio TI 2026</div></td><td>DOCX</td><td><span class="doc-badge badge-review">En revisión</span></td><td>Ayer</td><td>650 KB</td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- USUARIOS -->
+      <div class="view" id="view-users">
+        <div class="page-title">Gestión de usuarios</div>
+        <div class="page-sub">Administra los accesos y roles del sistema</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px">
+          <button class="btn-primary"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Nuevo usuario</button>
+          <button class="btn-outline">Importar</button>
+        </div>
+        <div class="users-table">
+          <table>
+            <thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Último acceso</th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center"><div class="u-avatar" style="background:#185FA5">MQ</div>María Quispe</div></td><td style="color:var(--color-text-secondary);font-size:12px">m.quispe@univ.edu.pe</td><td><span class="role-pill role-editor">Editor</span></td><td><span class="status-dot status-active"></span><span style="font-size:12px">Activo</span></td><td style="font-size:12px;color:var(--color-text-secondary)">hace 5 min</td></tr>
+              <tr><td><div style="display:flex;align-items:center"><div class="u-avatar" style="background:#0F6E56">CM</div>Carlos Mamani</div></td><td style="color:var(--color-text-secondary);font-size:12px">c.mamani@univ.edu.pe</td><td><span class="role-pill role-auditor">Auditor</span></td><td><span class="status-dot status-active"></span><span style="font-size:12px">Activo</span></td><td style="font-size:12px;color:var(--color-text-secondary)">hace 1h</td></tr>
+              <tr><td><div style="display:flex;align-items:center"><div class="u-avatar" style="background:#993C1D">LF</div>Luis Flores</div></td><td style="color:var(--color-text-secondary);font-size:12px">l.flores@univ.edu.pe</td><td><span class="role-pill role-editor">Editor</span></td><td><span class="status-dot status-active"></span><span style="font-size:12px">Activo</span></td><td style="font-size:12px;color:var(--color-text-secondary)">hace 3h</td></tr>
+              <tr><td><div style="display:flex;align-items:center"><div class="u-avatar" style="background:#444441">RC</div>Rosa Condori</div></td><td style="color:var(--color-text-secondary);font-size:12px">r.condori@univ.edu.pe</td><td><span class="role-pill role-admin">Admin</span></td><td><span class="status-dot status-inactive"></span><span style="font-size:12px;color:var(--color-text-secondary)">Inactivo</span></td><td style="font-size:12px;color:var(--color-text-secondary)">hace 2 días</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REPORTES -->
+      <div class="view" id="view-reports">
+        <div class="page-title">Reportes</div>
+        <div class="page-sub">Genera y exporta reportes del sistema</div>
+        <div class="reports-grid">
+          <div class="report-card">
+            <div class="rc-icon" style="background:#E6F1FB"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#185FA5"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
+            <div class="rc-title">Documentos por estado</div>
+            <div class="rc-desc">Distribución de documentos según su estado actual</div>
+            <div class="mini-bar">
+              <div class="bar" style="height:80%;background:#378ADD"></div>
+              <div class="bar" style="height:45%;background:#378ADD;opacity:.6"></div>
+              <div class="bar" style="height:60%;background:#378ADD;opacity:.4"></div>
+              <div class="bar" style="height:30%;background:#378ADD;opacity:.3"></div>
+              <div class="bar" style="height:70%;background:#378ADD"></div>
+              <div class="bar" style="height:50%;background:#378ADD;opacity:.5"></div>
+              <div class="bar" style="height:90%;background:#378ADD"></div>
+            </div>
+          </div>
+          <div class="report-card">
+            <div class="rc-icon" style="background:#EAF3DE"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#3B6D11"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z"/></svg></div>
+            <div class="rc-title">Actividad mensual</div>
+            <div class="rc-desc">Documentos subidos y procesados por mes</div>
+            <div class="mini-bar">
+              <div class="bar" style="height:40%;background:#639922"></div>
+              <div class="bar" style="height:60%;background:#639922"></div>
+              <div class="bar" style="height:75%;background:#639922"></div>
+              <div class="bar" style="height:55%;background:#639922"></div>
+              <div class="bar" style="height:85%;background:#639922"></div>
+              <div class="bar" style="height:65%;background:#639922"></div>
+              <div class="bar" style="height:100%;background:#639922"></div>
+            </div>
+          </div>
+          <div class="report-card">
+            <div class="rc-icon" style="background:#FAEEDA"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#BA7517"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+            <div class="rc-title">Actividad por usuario</div>
+            <div class="rc-desc">Documentos gestionados por cada usuario</div>
+            <div class="mini-bar">
+              <div class="bar" style="height:90%;background:#EF9F27"></div>
+              <div class="bar" style="height:50%;background:#EF9F27"></div>
+              <div class="bar" style="height:70%;background:#EF9F27"></div>
+              <div class="bar" style="height:40%;background:#EF9F27"></div>
+              <div class="bar" style="height:60%;background:#EF9F27"></div>
+            </div>
+          </div>
+          <div class="report-card">
+            <div class="rc-icon" style="background:#FCEBEB"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#A32D2D"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+            <div class="rc-title">Auditoría del sistema</div>
+            <div class="rc-desc">Registro de acciones críticas y cambios</div>
+            <div class="mini-bar">
+              <div class="bar" style="height:30%;background:#E24B4A"></div>
+              <div class="bar" style="height:50%;background:#E24B4A"></div>
+              <div class="bar" style="height:20%;background:#E24B4A"></div>
+              <div class="bar" style="height:70%;background:#E24B4A"></div>
+              <div class="bar" style="height:40%;background:#E24B4A"></div>
+              <div class="bar" style="height:60%;background:#E24B4A"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OTROS MÓDULOS -->
+      <div class="view" id="view-modules">
+        <div class="page-title">Otros módulos</div>
+        <div class="page-sub">Módulos adicionales que se irán habilitando</div>
+        <div class="modules-grid">
+          <div class="module-card">
+            <div class="mc-icon" style="background:#E6F1FB"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#185FA5"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+            <div class="mc-title">Notificaciones</div>
+            <div class="mc-sub">Alertas y avisos a usuarios</div>
+            <div class="mc-badge">Próximo</div>
+          </div>
+          <div class="module-card">
+            <div class="mc-icon" style="background:#E1F5EE"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#0F6E56"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></div>
+            <div class="mc-title">Flujos de trabajo</div>
+            <div class="mc-sub">Aprobaciones y etapas</div>
+            <div class="mc-badge">Próximo</div>
+          </div>
+          <div class="module-card">
+            <div class="mc-icon" style="background:#FAEEDA"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#BA7517"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg></div>
+            <div class="mc-title">Capacitaciones</div>
+            <div class="mc-sub">Gestión de formación</div>
+            <div class="mc-badge">Próximo</div>
+          </div>
+          <div class="module-card">
+            <div class="mc-icon" style="background:#F1EFE8"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#444441"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
+            <div class="mc-title">Formularios</div>
+            <div class="mc-sub">Formularios digitales</div>
+            <div class="mc-badge">Próximo</div>
+          </div>
+          <div class="module-card">
+            <div class="mc-icon" style="background:#FBEAF0"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#993556"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg></div>
+            <div class="mc-title">Multimedia</div>
+            <div class="mc-sub">Videos y recursos</div>
+            <div class="mc-badge">Próximo</div>
+          </div>
+          <div class="module-card" style="border-style:dashed">
+            <div class="mc-icon" style="background:var(--color-background-secondary)"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--color-text-secondary)"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
+            <div class="mc-title" style="color:var(--color-text-secondary)">Nuevo módulo</div>
+            <div class="mc-sub">Por definir</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIGURACIÓN -->
+      <div class="view" id="view-config">
+        <div class="page-title">Configuración</div>
+        <div class="page-sub">Ajustes del sistema DMS</div>
+        <div class="config-sections">
+          <div class="config-card">
+            <div class="card-title">General</div>
+            <div class="config-row">
+              <div><div class="config-row-label">Nombre de la institución</div><div class="config-row-sub">Universidad Nacional</div></div>
+              <button class="btn-outline" style="font-size:11px;padding:4px 10px">Editar</button>
+            </div>
+            <div class="config-row">
+              <div><div class="config-row-label">Zona horaria</div><div class="config-row-sub">America/Lima (UTC-5)</div></div>
+              <button class="btn-outline" style="font-size:11px;padding:4px 10px">Cambiar</button>
+            </div>
+          </div>
+          <div class="config-card">
+            <div class="card-title">Notificaciones</div>
+            <div class="config-row">
+              <div><div class="config-row-label">Notificaciones por correo</div><div class="config-row-sub">Enviar alertas a los usuarios</div></div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="config-row">
+              <div><div class="config-row-label">Recordatorios de vencimiento</div><div class="config-row-sub">Avisar 3 días antes del vencimiento</div></div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="config-row">
+              <div><div class="config-row-label">Resumen semanal</div><div class="config-row-sub">Reporte automático cada lunes</div></div>
+              <div class="toggle" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+          <div class="config-card">
+            <div class="card-title">Seguridad</div>
+            <div class="config-row">
+              <div><div class="config-row-label">Autenticación con Google</div><div class="config-row-sub">Login OAuth 2.0 activo</div></div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="config-row">
+              <div><div class="config-row-label">Registro de auditoría</div><div class="config-row-sub">Guardar log de acciones críticas</div></div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const views = { dashboard:'Dashboard', docs:'Documentos', users:'Usuarios', reports:'Reportes', modules:'Módulos', config:'Configuración' };
+const icons = { dashboard:'<path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>',docs:'<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>',users:'<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>',reports:'<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/>',modules:'<path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>',config:'<path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>'};
+
+function navigate(view, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = `<svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor"><${icons[view]}/></svg><span>${views[view]}</span>`;
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+function setDocView(mode) {
+  const grid = document.getElementById('docs-grid');
+  const list = document.getElementById('docs-list');
+  const btnG = document.getElementById('vt-grid');
+  const btnL = document.getElementById('vt-list');
+  if(mode === 'grid') {
+    grid.style.display = 'grid'; list.style.display = 'none';
+    btnG.classList.add('active'); btnL.classList.remove('active');
+  } else {
+    grid.style.display = 'none'; list.style.display = 'block';
+    btnG.classList.remove('active'); btnL.classList.add('active');
+  }
+}
+</script>
