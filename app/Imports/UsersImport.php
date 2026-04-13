@@ -38,6 +38,10 @@ class UsersImport implements ToCollection, WithHeadingRow, SkipsOnError
                     'name'      => trim($row['name']),
                     'email'     => strtolower(trim($row['email'])),
                     'password'  => Hash::make($row['password'] ?? str()->random(12)),
+                    'dni'       => $row['dni'] ?? null,
+                    'phone'     => $row['phone'] ?? null,
+                    'position'  => $row['position'] ?? null,
+                    'unit_id'   => isset($row['unit_id']) ? (int)$row['unit_id'] : null,
                     'is_active' => isset($row['is_active']) ? (bool)$row['is_active'] : true,
                 ]);
 

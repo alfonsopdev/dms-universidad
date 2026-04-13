@@ -14,6 +14,10 @@ class StoreUserRequest extends FormRequest
             'name'      => 'required|string|max:255',
             'email'     => 'required|email|unique:users,email',
             'password'  => 'nullable|string|min:8',
+            'dni'       => 'nullable|string|max:20|unique:users,dni',
+            'phone'     => 'nullable|string|max:20',
+            'position'  => 'nullable|string|max:100',
+            'unit_id'   => 'nullable|exists:units,id',
             'role'      => 'nullable|string|exists:roles,name',
             'is_active' => 'nullable|boolean',
         ];

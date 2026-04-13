@@ -44,60 +44,75 @@
             <div v-if="store.loading" class="text-center py-5">
                 <div class="spinner-border text-primary"></div>
             </div>
-            <table v-else class="table mb-0">
-                <thead>
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Correo</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th>Registrado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="store.users.length === 0">
-                        <td colspan="6" class="text-center text-muted py-4">No hay usuarios.</td>
-                    </tr>
-                    <tr v-for="u in store.users" :key="u.id">
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="u-avatar" :style="{ background: avatarColor(u.name) }">
-                                    {{ initials(u.name) }}
-                                </div>
-                                <div class="fw-500">{{ u.name }}</div>
-                            </div>
-                        </td>
-                        <td class="text-muted small">{{ u.email }}</td>
-                        <td>
-                            <span
-                                v-for="role in u.roles"
-                                :key="role.id"
-                                class="role-pill"
-                                :class="'role-' + role.name"
-                            >{{ role.name }}</span>
-                        </td>
-                        <td>
-                            <span class="status-badge" :class="u.is_active ? 'active' : 'inactive'">
-                                <span class="status-dot"></span>
-                                {{ u.is_active ? 'Activo' : 'Inactivo' }}
-                            </span>
-                        </td>
-                        <td class="text-muted small">{{ formatDate(u.created_at) }}</td>
-                        <td>
-                            <div class="d-flex gap-1">
-                                <button class="btn-icon" @click="openEditModal(u)" title="Editar">✎</button>
-                                <button
-                                    class="btn-icon danger"
-                                    @click="deactivateUser(u)"
-                                    :disabled="u.id === authStore.user?.id"
-                                    title="Desactivar"
-                                >✕</button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <table class="table mb-0">
+    <thead>
+        <tr>
+            <th>Usuario</th>
+            <th>DNI</th>
+            <th>Correo / Teléfono</th>
+            <th>Cargo</th>
+            <th>Área / Unidad</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr v-if="store.users.length === 0">
+            <td colspan="8" class="text-center text-muted py-4">No hay usuarios.</td>
+        </tr>
+        <tr v-for="u in store.users" :key="u.id">
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="u-avatar" :style="{ background: avatarColor(u.name) }">
+                        <img v-if="u.avatar" :src="u.avatar" class="avatar-img" />
+                        <span v-else>{{ initials(u.name) }}</span>
+                    </div>
+                    <div>
+                        <div class="fw-500">{{ u.name }}</div>
+                        <div class="text-muted" style="font-size:11px">
+                            Registrado {{ formatDate(u.created_at) }}
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td class="text-muted small">{{ u.dni || '—' }}</td>
+            <td>
+                <div class="small">{{ u.email }}</div>
+                <div class="text-muted" style="font-size:11px">{{ u.phone || '—' }}</div>
+            </td>
+            <td class="small">{{ u.position || '—' }}</td>
+            <td>
+                <span v-if="u.unit" class="unit-badge">{{ u.unit.name }}</span>
+                <span v-else class="text-muted small">—</span>
+            </td>
+            <td>
+                <span
+                    v-for="role in u.roles" :key="role.id"
+                    class="role-pill" :class="'role-' + role.name"
+                >{{ role.name }}</span>
+                <span v-if="!u.roles?.length" class="text-muted small">Sin rol</span>
+            </td>
+            <td>
+                <span class="status-badge" :class="u.is_active ? 'active' : 'inactive'">
+                    <span class="status-dot"></span>
+                    {{ u.is_active ? 'Activo' : 'Inactivo' }}
+                </span>
+            </td>
+            <td>
+                <div class="d-flex gap-1">
+                    <button class="btn-icon" @click="openEditModal(u)" title="Editar">✎</button>
+                    <button
+                        class="btn-icon danger"
+                        @click="deactivateUser(u)"
+                        :disabled="u.id === authStore.user?.id"
+                        title="Desactivar"
+                    >✕</button>
+                </div>
+            </td>
+        </tr>
+    </tbody>
+</table>
         </div>
 
         <!-- Paginación -->
@@ -118,41 +133,65 @@
                     <h5>{{ editingUser ? 'Editar usuario' : 'Nuevo usuario' }}</h5>
                     <button @click="showFormModal = false" class="close-btn">✕</button>
                 </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Nombre completo *</label>
-                        <input v-model="form.name" type="text" placeholder="Ej: Juan Pérez" />
-                        <span v-if="formErrors.name" class="field-error">{{ formErrors.name }}</span>
-                    </div>
-                    <div class="form-group">
-                        <label>Correo electrónico *</label>
-                        <input v-model="form.email" type="email" placeholder="juan@universidad.edu.pe" />
-                        <span v-if="formErrors.email" class="field-error">{{ formErrors.email }}</span>
-                    </div>
-                    <div class="form-group">
-                        <label>{{ editingUser ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña' }}</label>
-                        <input v-model="form.password" type="password" placeholder="Mínimo 8 caracteres" />
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Rol</label>
-                            <select v-model="form.role">
-                                <option value="">Sin rol</option>
-                                <option v-for="r in store.roles" :key="r.id" :value="r.name">
-                                    {{ r.name }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Estado</label>
-                            <select v-model="form.is_active">
-                                <option :value="true">Activo</option>
-                                <option :value="false">Inactivo</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div v-if="formError" class="alert-error">{{ formError }}</div>
-                </div>
+                 <div class="modal-body">
+    <div class="form-row">
+        <div class="form-group">
+            <label>Nombre completo *</label>
+            <input v-model="form.name" type="text" placeholder="Juan Pérez" />
+            <span v-if="formErrors.name" class="field-error">{{ formErrors.name }}</span>
+        </div>
+        <div class="form-group">
+            <label>DNI</label>
+            <input v-model="form.dni" type="text" placeholder="12345678" maxlength="8" />
+            <span v-if="formErrors.dni" class="field-error">{{ formErrors.dni }}</span>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Correo electrónico *</label>
+            <input v-model="form.email" type="email" placeholder="juan@universidad.edu.pe" />
+            <span v-if="formErrors.email" class="field-error">{{ formErrors.email }}</span>
+        </div>
+        <div class="form-group">
+            <label>Teléfono</label>
+            <input v-model="form.phone" type="text" placeholder="999 999 999" />
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Cargo / Puesto</label>
+            <input v-model="form.position" type="text" placeholder="Ej: Jefe de Área" />
+        </div>
+        <div class="form-group">
+            <label>Área / Unidad</label>
+            <select v-model="form.unit_id">
+                <option value="">Sin área</option>
+                <option v-for="u in units" :key="u.id" :value="u.id">{{ u.name }}</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Rol</label>
+            <select v-model="form.role">
+                <option value="">Sin rol</option>
+                <option v-for="r in store.roles" :key="r.id" :value="r.name">{{ r.name }}</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Estado</label>
+            <select v-model="form.is_active">
+                <option :value="true">Activo</option>
+                <option :value="false">Inactivo</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-group">
+        <label>{{ editingUser ? 'Nueva contraseña (vacío = no cambia)' : 'Contraseña' }}</label>
+        <input v-model="form.password" type="password" placeholder="Mínimo 8 caracteres" />
+    </div>
+    <div v-if="formError" class="alert-error">{{ formError }}</div>
+</div>
                 <div class="modal-footer">
                     <button @click="showFormModal = false" class="btn-cancel">Cancelar</button>
                     <button @click="submitForm" :disabled="formLoading" class="btn-submit">
@@ -256,12 +295,14 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import axios from 'axios';
 import { useUserStore }  from '@/stores/users.js';
 import { useAuthStore }  from '@/stores/auth.js';
 
 const store     = useUserStore();
 const authStore = useAuthStore();
 
+const units = ref([]);
 const search       = ref('');
 const filterRole   = ref('');
 const filterStatus = ref('');
@@ -273,7 +314,12 @@ const showImportModal = ref(false);
 const editingUser     = ref(null);
 
 // Formulario
-const form = reactive({ name: '', email: '', password: '', role: '', is_active: true });
+// Actualiza el form reactive para incluir nuevos campos
+const form = reactive({
+    name: '', email: '', password: '',
+    dni: '', phone: '', position: '',
+    unit_id: '', role: '', is_active: true,
+});
 const formErrors = reactive({});
 const formError  = ref(null);
 const formLoading = ref(false);
@@ -287,7 +333,10 @@ const importLoading = ref(false);
 
 onMounted(async () => {
     await Promise.all([store.fetchUsers(), store.fetchRoles()]);
+    const res = await axios.get('/api/units');
+    units.value = res.data;
 });
+ 
 
 function loadUsers(page = 1) {
     store.fetchUsers({
@@ -317,6 +366,10 @@ function openEditModal(u) {
         name:      u.name,
         email:     u.email,
         password:  '',
+        dni:       u.dni       || '',
+        phone:     u.phone     || '',
+        position:  u.position  || '',
+        unit_id:   u.unit_id   || '',
         role:      u.roles?.[0]?.name || '',
         is_active: u.is_active,
     });
@@ -406,6 +459,8 @@ function formatDate(date) {
 .table th    { font-size: 11px; font-weight: 500; color: #888; padding: 10px 16px; text-align: left; border-bottom: 0.5px solid #e0e0e0; background: #f9f9f9; }
 .table td    { padding: 12px 16px; border-bottom: 0.5px solid #f0f0f0; color: #222; }
 .table tr:last-child td { border-bottom: none; }
+.unit-badge {font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; background: #E6F1FB; color: #185FA5; display: inline-block;}
+.avatar-img {width: 100%; height: 100%; border-radius: 50%; object-fit: cover;}
 .u-avatar    { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 600; flex-shrink: 0; }
 .role-pill   { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; display: inline-block; text-transform: capitalize; }
 .role-super_admin   { background: #FCEBEB; color: #A32D2D; }

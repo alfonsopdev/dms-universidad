@@ -20,27 +20,27 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = User::with('roles')
+        $query = User::with(['roles', 'unit'])
             ->orderBy('created_at', 'desc');
 
         if ($request->search) {
             $query->where(function($q) use ($request) {
                 $q->where('name',  'like', "%{$request->search}%")
-                  ->orWhere('email', 'like', "%{$request->search}%");
+                ->orWhere('email', 'like', "%{$request->search}%")
+                ->orWhere('dni',   'like', "%{$request->search}%");
             });
         }
-
         if ($request->role) {
             $query->whereHas('roles', fn($q) => $q->where('name', $request->role));
         }
-
+        if ($request->unit_id) {
+            $query->where('unit_id', $request->unit_id);
+        }
         if ($request->status !== null && $request->status !== '') {
             $query->where('is_active', $request->status);
         }
 
-        $users = $query->paginate($request->per_page ?? 15);
-
-        return response()->json($users);
+        return response()->json($query->paginate($request->per_page ?? 15));
     }
 
     /**
@@ -52,6 +52,10 @@ class UserController extends Controller
             'name'      => $request->name,
             'email'     => $request->email,
             'password'  => Hash::make($request->password ?? str()->random(12)),
+            'dni'       => $request->dni,
+            'phone'     => $request->phone,
+            'position'  => $request->position,
+            'unit_id'   => $request->unit_id,
             'is_active' => $request->is_active ?? true,
         ]);
 
@@ -59,7 +63,7 @@ class UserController extends Controller
             $user->assignRole($request->role);
         }
 
-        return response()->json($user->load('roles'), 201);
+        return response()->json($user->load('roles', 'unit'), 201);
     }
 
     /**
@@ -75,7 +79,10 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        $data = $request->only(['name', 'email', 'is_active']);
+        $data = $request->only([
+            'name', 'email', 'dni', 'phone',
+            'position', 'unit_id', 'is_active'
+        ]);
 
         if ($request->password) {
             $data['password'] = Hash::make($request->password);
@@ -83,11 +90,11 @@ class UserController extends Controller
 
         $user->update($data);
 
-        if ($request->role) {
+        if ($request->has('role')) {
             $user->syncRoles([$request->role]);
         }
 
-        return response()->json($user->load('roles'));
+        return response()->json($user->load('roles', 'unit'));
     }
 
     /**
@@ -139,8 +146,8 @@ class UserController extends Controller
      */
     public function template(): mixed
     {
-        $headers = ['name', 'email', 'role', 'is_active'];
-        $example = ['Juan Pérez', 'juan@universidad.edu.pe', 'usuario', '1'];
+        $headers = ['name','email','password','dni','phone','position','unit_id','role','is_active'];
+        $example = ['Juan Pérez','juan@universidad.edu.pe','password123','12345678','999999999','Jefe de Área','1','usuario','1'];
 
         $content = implode(',', $headers) . "\n" . implode(',', $example) . "\n";
 

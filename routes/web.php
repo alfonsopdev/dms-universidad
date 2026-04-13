@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\GoogleController;
 // Importación de los nuevos controladores de la API
 use App\Http\Controllers\Api\DocumentController;
@@ -9,6 +10,8 @@ use App\Http\Controllers\Api\DocumentVersionController;
 use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\DocumentTypeController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
 
 
 /*
@@ -18,9 +21,16 @@ use App\Http\Controllers\Api\UserController;
 */
 
 // Vista de Login
-Route::get('/login', function () {
+/*Route::get('/login', function () {
     return view('app');
+})->name('login');*/
+
+Route::get('/login', function () {
+    return view('auth.login'); // Aquí llama a tu nuevo Blade
 })->name('login');
+
+// Procesar el formulario de Login tradicional
+Route::post('/login', [LoginController::class, 'authenticate']);
 
 // Google OAuth
 Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
@@ -49,7 +59,15 @@ Route::middleware(['auth'])->group(function () {
             Route::get('users/template', [UserController::class, 'template']);
             Route::post('users/import',  [UserController::class, 'import']);
             Route::apiResource('users',  UserController::class);
-                    
+        
+            // Roles
+            Route::post('roles/assign',   [RoleController::class, 'assignToUser']);
+            Route::apiResource('roles',   RoleController::class);
+
+            // Permisos
+            Route::get('permissions',     [PermissionController::class, 'index']);
+            Route::post('permissions',    [PermissionController::class, 'store']);
+            Route::delete('permissions/{permission}', [PermissionController::class, 'destroy']);                
         // Stats para dashboard
         Route::get('documents/stats', function () {
             return response()->json([

@@ -15,6 +15,10 @@ class UpdateUserRequest extends FormRequest
             'name'      => 'sometimes|string|max:255',
             'email'     => "sometimes|email|unique:users,email,{$userId}",
             'password'  => 'nullable|string|min:8',
+            'dni'       => "nullable|string|max:20|unique:users,dni,{$userId}",
+            'phone'     => 'nullable|string|max:20',
+            'position'  => 'nullable|string|max:100',
+            'unit_id'   => 'nullable|exists:units,id',
             'role'      => 'nullable|string|exists:roles,name',
             'is_active' => 'nullable|boolean',
         ];

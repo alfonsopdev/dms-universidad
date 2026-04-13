@@ -57,34 +57,36 @@
 
         <!-- Vista tarjetas -->
         <div v-else-if="viewMode === 'grid'" class="docs-grid">
-            <div
-                v-for="doc in store.documents"
-                :key="doc.id"
-                class="doc-card"
-                @click="goToDetail(doc.id)"
-            >
-                <div class="dc-header">
-                    <div class="dc-icon" :class="getIconClass(doc)">
-                        {{ getFileExt(doc) }}
-                    </div>  
-                    <div class="dc-name">{{ doc.name }}</div>
-                    <button
-                        class="fav-btn"
-                        :class="{ active: doc.is_favorited }"
-                        @click.stop="toggleFav(doc)"
-                    >★</button>
-                </div>
-                <div class="dc-meta">
-                    {{ doc.unit?.name || 'Sin unidad' }} · v{{ doc.current_version }}
-                </div>
-                <div class="dc-footer">
-                    <span class="doc-badge" :class="'badge-' + doc.status">
-                        {{ statusLabel(doc.status) }}
-                    </span>
-                    <span class="doc-date">{{ formatDate(doc.created_at) }}</span>
-                </div>
+    <div
+        v-for="doc in store.documents"
+        :key="doc.id"
+        class="doc-card"
+        @click="goToDetail(doc.id)"
+        >
+            <div class="dc-header">
+                <div class="dc-icon" :class="getIconClass(doc)">
+                    {{ getFileExt(doc) }}
+                </div>  
+                <div class="dc-name">{{ doc.name }}</div>
+                <button
+                    class="fav-btn"
+                    :class="{ active: doc.is_favorited }"
+                    @click.stop="toggleFav(doc)"
+                >★</button>
+            </div>
+            
+            <div class="dc-meta">
+                {{ doc.unit?.name || 'Sin unidad' }} · v{{ doc.current_version?.version_number || '1.0' }}
+            </div>
+
+            <div class="dc-footer">
+                <span class="doc-badge" :class="'badge-' + doc.status">
+                    {{ statusLabel(doc.status) }}
+                </span>
+                <span class="doc-date">{{ formatDate(doc.created_at) }}</span>
             </div>
         </div>
+    </div>
 
         <!-- Vista lista -->
         <div v-else class="docs-list card">
@@ -120,8 +122,7 @@
                         </td>
                         <td class="text-muted small">{{ doc.type?.name || '—' }}</td>
                         <td class="text-muted small">{{ doc.unit?.name || '—' }}</td>
-                        <td class="text-muted small">v{{ doc.current_version }}</td>
-                        <td>
+                        <td class="text-muted small">v{{ doc.current_version?.version_number || '1.0' }}</td>                        <td>
                             <span class="doc-badge" :class="'badge-' + doc.status">
                                 {{ statusLabel(doc.status) }}
                             </span>

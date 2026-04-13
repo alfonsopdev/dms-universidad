@@ -15,6 +15,7 @@ const routes = [
         meta: { requiresAuth: true },
         children: [
             { path: '', redirect: '/dashboard' },
+            { path: '/roles-permisos', name: 'roles', component: () => import('@/views/RolesPermissions.vue') },
             { path: '/dashboard', name: 'dashboard', component: () => import('@/views/Dashboard.vue') },
             { path: '/documentos', name: 'documentos', component: () => import('@/views/documents/Index.vue') },
             { path: '/usuarios', name: 'usuarios', component: () => import('@/views/Users.vue') },
