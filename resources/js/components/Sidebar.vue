@@ -58,16 +58,32 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useAuthStore } from '@/stores/auth.js';
+import { useRouter } from 'vue-router';
+
+// 1. Inicializamos el Router
+const router = useRouter();
 
 const props = defineProps({
     collapsed: Boolean,
     currentView: String,
 });
+
 const emit = defineEmits(['navigate']);
 
 const authStore = useAuthStore();
 const docSubView = ref('all');
 
+// 2. Definimos el Mapa de Rutas (Esto es lo que faltaba)
+const routeMap = {
+    dashboard: '/dashboard',
+    docs:      '/documentos',
+    users:     '/usuarios',
+    reports:   '/reportes',
+    modules:   '/modulos',
+    config:    '/configuracion',
+};
+
+// 3. Lógica del usuario
 const userInitials = computed(() => {
     const name = authStore.user?.name || 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -77,10 +93,17 @@ const userRole = computed(() => {
     return authStore.user?.roles?.[0]?.name || 'usuario';
 });
 
+// 4. Función de navegación integrada
 function navigate(view) {
+    // Avisamos al componente padre del cambio de vista
     emit('navigate', view);
+    
+    // Cambiamos la URL usando el router y nuestro mapa
+    // Si la vista no existe en el mapa, nos manda al dashboard por defecto
+    router.push(routeMap[view] || '/dashboard');
 }
 
+// 5. Estructura del Menú
 const menuItems = [
     {
         view: 'dashboard', label: 'Dashboard',

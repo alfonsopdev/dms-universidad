@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Document extends Model
@@ -75,9 +76,11 @@ class Document extends Model
         return $this->hasMany(DocumentVersion::class)->orderBy('created_at', 'desc');
     }
 
-    public function currentVersion()
+    public function currentVersion(): HasOne
     {
-        return $this->hasOne(DocumentVersion::class)->where('is_current', true);
+        return $this->hasOne(DocumentVersion::class)
+            ->latestOfMany('id')
+            ->where('is_current', true);
     }
 
     public function auditLogs(): HasMany

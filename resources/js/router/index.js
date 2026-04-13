@@ -21,6 +21,9 @@ const routes = [
             { path: '/reportes', name: 'reportes', component: () => import('@/views/Reports.vue') },
             { path: '/modulos', name: 'modulos', component: () => import('@/views/Modules.vue') },
             { path: '/configuracion', name: 'config', component: () => import('@/views/Config.vue') },
+            { path: '/documentos/:id', name: 'documentos.show', component: () => import('@/views/documents/Show.vue') },
+            { path: '/documentos/favoritos', name: 'documentos.favorites', component: () => import('@/views/documents/Favorite.vue') },
+            { path: '/documentos/papelera', name: 'documentos.trash', component: () => import('@/views/documents/Trash.vue') },
         ]
     },
 ];

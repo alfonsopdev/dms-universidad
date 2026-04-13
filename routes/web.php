@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentVersionController;
 use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\DocumentTypeController;
+use App\Http\Controllers\Api\UserController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -42,7 +44,12 @@ Route::middleware(['auth'])->group(function () {
 
     // 2. Grupo de API interna
     Route::prefix('api')->group(function () {
-        
+        // Usuarios
+            Route::get('users/roles',    [UserController::class, 'roles']);
+            Route::get('users/template', [UserController::class, 'template']);
+            Route::post('users/import',  [UserController::class, 'import']);
+            Route::apiResource('users',  UserController::class);
+                    
         // Stats para dashboard
         Route::get('documents/stats', function () {
             return response()->json([
